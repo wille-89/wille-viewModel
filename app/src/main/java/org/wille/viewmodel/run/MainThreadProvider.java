@@ -2,6 +2,7 @@ package org.wille.viewmodel.run;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 /**
@@ -20,7 +21,7 @@ public class MainThreadProvider {
         initHandler();
     }
 
-    public void postToMainThread(@Nullable Runnable runnable) {
+    public void postToMainThread(@NonNull Runnable runnable) {
         synchronized (mLock) {
             if (isMainThread()) {
                 runnable.run();
