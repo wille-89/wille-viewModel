@@ -43,10 +43,8 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
 
     /**
      * 加载数据源入口
-     *
-     * @param type 获取数据类型，是 init or result or addMore or def
      */
-    public abstract void loadData(@ViewModelConstant.LoadDataType int type);
+    public abstract void loadData();
 
     /**
      * 可以在这里做一些初始化操作

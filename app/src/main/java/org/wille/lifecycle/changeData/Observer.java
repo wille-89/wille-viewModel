@@ -16,9 +16,9 @@ public interface Observer<T> {
 
 
     /**
-     * 当调用 {@link LiveData#postValue} 时触发
+     * 当调用 {@link CLiveData#postValue} 时触发
      * 在多个线程同时触发新的 onChanged 事件在主线程未通知出去时会覆盖旧的事件
-     * 详情请参考 {@link LiveData#postValue}
+     * 详情请参考 {@link CLiveData#postValue}
      * 回调一定会在主线程响应
      *
      * @param t    一个新的数据变化
