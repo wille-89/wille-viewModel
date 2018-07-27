@@ -12,10 +12,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.wille.lifecycle.run.ViewModelConstant.*;
-import org.wille.viewmodel.LiveData.LiveData;
+import org.wille.lifecycle.run.WilleErrorConverter;
 import org.wille.viewmodel.ViewModelConstant;
 import org.wille.viewmodel.run.MainThreadProvider;
-import org.wille.viewmodel.run.RunTimeError;
 
 import static android.arch.lifecycle.Lifecycle.State.DESTROYED;
 import static android.arch.lifecycle.Lifecycle.State.STARTED;
@@ -94,6 +93,9 @@ public class CLiveData<T> {
         owner.getLifecycle().addObserver(wrapper);
     }
 
+    public void postValue(WilleErrorConverter errorConverter, @NonNull @LoadDataType int type){
+
+    }
 
     /**
      * 将数据的变化推给他的观测者们
@@ -221,7 +223,7 @@ public class CLiveData<T> {
             //noinspection unchecked
             observer.mObserver.onChanged((T) mData, mType);
         } catch (Exception e) {
-            observer.mObserver.onError();
+            observer.mObserver.onError(WilleErrorConverter.exceptionConverter(e));
         }
     }
 
