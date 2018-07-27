@@ -7,6 +7,7 @@ import android.arch.lifecycle.LifecycleOwner;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -248,9 +249,9 @@ public class CLiveData<T> {
         }
         observer.mLastVersion = mVersion;
         // 判断本次是异常事件还是正常事件
-        if (mErrorConverter != null){
+        if (mErrorConverter != null) {
             observer.mObserver.onError(mErrorConverter);
-        }else{
+        } else {
             try {
                 //noinspection unchecked
                 observer.mObserver.onChanged((T) mData, mType);
@@ -260,12 +261,10 @@ public class CLiveData<T> {
         }
     }
 
-
     /**
      * 自动处理生命周期的容器
      */
     private class LifecycleBoundObserver extends ObserverWrapper implements GenericLifecycleObserver {
-
         @NonNull
         final LifecycleOwner mOwner;
 
@@ -369,7 +368,6 @@ public class CLiveData<T> {
                 dispatchingValue(this);
             }
         }
-
     }
 
     @MainThread
@@ -396,11 +394,40 @@ public class CLiveData<T> {
     }
 
     /**
+     * 清理所有观测者
+     */
+    private void removeObservers() {
+        if (mObservers != null) {
+            mObservers.clear();
+        }
+        mObservers = null;
+    }
+
+    public void onDestroy() {
+        removeObservers();
+    }
+
+    @Nullable
+    public T getValue(){
+        return (T) mData;
+    }
+
+    @NonNull
+    public @LoadDataType int getType(){
+        return mType;
+    }
+
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void postValue(){
+        dispatchingValue(null);
+    }
+
+    /**
      * 当前 LiveData 处于活跃状态
      * 可以理解成有活跃的 ObserverWrapper 对象
      */
     protected void onActive() {
-
     }
 
     /**
@@ -408,8 +435,5 @@ public class CLiveData<T> {
      * 可以理解成没有活跃的 ObserverWrapper 对象
      */
     protected void onInactive() {
-
     }
-
-
 }
