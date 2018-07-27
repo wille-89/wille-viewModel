@@ -17,7 +17,7 @@ public abstract class ThreadProvider {
      *
      * @return
      */
-    public static boolean isMainThread() {
+    public final static boolean isMainThread() {
         return Looper.myLooper() == Looper.getMainLooper();
     }
 }

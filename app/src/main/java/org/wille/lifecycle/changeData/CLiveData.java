@@ -11,10 +11,10 @@ import android.support.annotation.Nullable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.wille.lifecycle.run.ThreadProvider;
 import org.wille.lifecycle.run.ViewModelConstant.*;
 import org.wille.lifecycle.run.WilleErrorConverter;
-import org.wille.viewmodel.ViewModelConstant;
-import org.wille.viewmodel.run.MainThreadProvider;
+import org.wille.lifecycle.utils.WilleThreadProvider;
 
 import static android.arch.lifecycle.Lifecycle.State.DESTROYED;
 import static android.arch.lifecycle.Lifecycle.State.STARTED;
@@ -120,7 +120,7 @@ public class CLiveData<T> {
     private void postValue(@Nullable T value, @Nullable WilleErrorConverter errorConverter, @NonNull @LoadDataType int type) {
         // 判断当前是否处于主线程，在不同的线程需要有不同的处理方式
         // 来保证我们的 observe 一定处于主线程
-        if (MainThreadProvider.getInstance().isMainThread()) {
+        if (ThreadProvider.isMainThread()) {
             // 当前处于主线程，采用线程同步的方式回调
             setValue(value, errorConverter, type);
         } else {
@@ -141,7 +141,7 @@ public class CLiveData<T> {
                 return;
             }
             // 调度至主线程执行
-            MainThreadProvider.getInstance().postToMainThread(mPostValueRunnable);
+            WilleThreadProvider.getInstance().runIoThreadProvider(mPostValueRunnable);
         }
     }
 
@@ -181,7 +181,7 @@ public class CLiveData<T> {
      * @param type
      */
     @MainThread
-    private void setValue(T value, WilleErrorConverter errorConverter, @NonNull @ViewModelConstant.LoadDataType int type) {
+    private void setValue(T value, WilleErrorConverter errorConverter, @NonNull @LoadDataType int type) {
         mVersion++;
         mData = value;
         mType = type;
@@ -374,7 +374,7 @@ public class CLiveData<T> {
 
     @MainThread
     public void removeObserver(@NonNull final Observer<T> observer) {
-        if (MainThreadProvider.getInstance().isMainThread()) {
+        if (ThreadProvider.isMainThread()) {
             ObserverWrapper removed = mObservers.get(observer);
             if (removed == null) {
                 return;
@@ -386,7 +386,7 @@ public class CLiveData<T> {
 
     @MainThread
     public void removeObservers(@NonNull final LifecycleOwner owner) {
-        if (MainThreadProvider.getInstance().isMainThread()) {
+        if (ThreadProvider.isMainThread()) {
             for (Map.Entry<Observer<T>, ObserverWrapper> entry : mObservers.entrySet()) {
                 if (entry.getValue().isAttachedTo(owner)) {
                     removeObserver(entry.getKey());

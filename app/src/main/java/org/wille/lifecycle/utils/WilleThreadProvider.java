@@ -39,7 +39,7 @@ public final class WilleThreadProvider extends ThreadProvider {
      *
      * @param runnable
      */
-    private void runMainThreadProvider(Runnable runnable) {
+    public void runMainThreadProvider(Runnable runnable) {
         if (mPostProvider == null) {
             mPostProvider = new MainThreadProvider();
         }
@@ -51,7 +51,7 @@ public final class WilleThreadProvider extends ThreadProvider {
      *
      * @param runnable
      */
-    private void runIoThreadProvider(Runnable runnable) {
+    public void runIoThreadProvider(Runnable runnable) {
         if (mPostToMainProvider == null) {
             mPostToMainProvider = new IoThreadProvider();
         }
