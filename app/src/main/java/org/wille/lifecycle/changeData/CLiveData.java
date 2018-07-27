@@ -42,6 +42,8 @@ public class CLiveData<T> {
     // 数据加载的方式
     private volatile @LoadDataType
     int mType = LOAD_DATA_DEF;
+    // 出现的异常
+    private volatile WilleErrorConverter mErrorConverter = null;
     // 观测者队列
     private ConcurrentHashMap<Observer<T>, ObserverWrapper> mObservers = new ConcurrentHashMap<>();
     // 是否开始分配数据
@@ -51,6 +53,7 @@ public class CLiveData<T> {
     private boolean mDispatchInvalidated = false;
     // 用于多线程中调度来维护数据一致性
     private volatile Object mPendingData = NOT_SET;
+    private volatile WilleErrorConverter mPendingConverter = null;
     private volatile @LoadDataType
     int mPendingType = LOAD_DATA_DEF;
     // 将非主线程触发的事件，调度回主线程执行
@@ -59,20 +62,25 @@ public class CLiveData<T> {
         public void run() {
             Object newValue;
             @LoadDataType int newType;
+            Object errorConverter;
             synchronized (mDataLock) {
                 // 只取得当前最新的事件
                 newValue = mPendingData;
                 newType = mPendingType;
+                errorConverter = mPendingConverter;
                 // 重置数据，等待下一次数据
                 mPendingData = NOT_SET;
             }
             //noinspection unchecked
-            setValue((T) newValue, newType);
+            setValue((T) newValue, (WilleErrorConverter) errorConverter, newType);
         }
     };
 
     /**
      * 注册观测者
+     * 如果在回调 {@link Observer#onChanged} 中发生错误，那么将会执行 {@link Observer#onError}
+     * 这并不影响其他的观测者进行观测
+     *
      * @param owner
      * @param observer
      */
@@ -93,10 +101,6 @@ public class CLiveData<T> {
         owner.getLifecycle().addObserver(wrapper);
     }
 
-    public void postValue(WilleErrorConverter errorConverter, @NonNull @LoadDataType int type){
-
-    }
-
     /**
      * 将数据的变化推给他的观测者们
      * 如果在主线程完成推送前调用了多次此方法
@@ -109,15 +113,16 @@ public class CLiveData<T> {
      * 但是这是正确的，这将减少我们回调的次数
      * 并保证 observe 收到的是最新的值
      *
-     * @param value 更改的数据
-     * @param type  本次更改数据的原因
+     * @param value          更改的数据
+     * @param errorConverter 是否发生错误
+     * @param type           本次更改数据的原因
      */
-    public void postValue(@Nullable T value, @NonNull @LoadDataType int type) {
+    private void postValue(@Nullable T value, @Nullable WilleErrorConverter errorConverter, @NonNull @LoadDataType int type) {
         // 判断当前是否处于主线程，在不同的线程需要有不同的处理方式
         // 来保证我们的 observe 一定处于主线程
         if (MainThreadProvider.getInstance().isMainThread()) {
             // 当前处于主线程，采用线程同步的方式回调
-            setValue(value, type);
+            setValue(value, errorConverter, type);
         } else {
             // 当前处于非主线程，使用 mPostValueRunnable 回调到主线程执行
             boolean postTask;
@@ -126,6 +131,7 @@ public class CLiveData<T> {
                 postTask = mPendingData == NOT_SET;
                 mPendingData = value;
                 mPendingType = type;
+                mPendingConverter = errorConverter;
             }
             // 如果 mPendingData 未在 mPostValueRunnable 重置，那么不需要重新发送事件
             // 因为 mPendingData 赋值是线程同步的
@@ -137,6 +143,26 @@ public class CLiveData<T> {
             // 调度至主线程执行
             MainThreadProvider.getInstance().postToMainThread(mPostValueRunnable);
         }
+    }
+
+    /**
+     * 逻辑请看{@link #postValue }
+     *
+     * @param errorConverter 是否发生错误
+     * @param type           本次更改数据的原因
+     */
+    public void postValue(@NonNull WilleErrorConverter errorConverter, @NonNull @LoadDataType int type) {
+        postValue(null, errorConverter, type);
+    }
+
+    /**
+     * 逻辑请看{@link #postValue }
+     *
+     * @param value 更改的数据
+     * @param type  本次更改数据的原因
+     */
+    public void postValue(@NonNull T value, @NonNull @LoadDataType int type) {
+        postValue(value, null, type);
     }
 
     /**
@@ -155,10 +181,11 @@ public class CLiveData<T> {
      * @param type
      */
     @MainThread
-    private void setValue(@Nullable T value, @NonNull @ViewModelConstant.LoadDataType int type) {
+    private void setValue(T value, WilleErrorConverter errorConverter, @NonNull @ViewModelConstant.LoadDataType int type) {
         mVersion++;
         mData = value;
         mType = type;
+        mErrorConverter = errorConverter;
         // 将数据的变化推送给观测者们
         dispatchingValue(null);
     }
@@ -170,6 +197,7 @@ public class CLiveData<T> {
      * 如果有 initiator "生命周期发生变化的观测者"
      * 那么为了让它能够收到最新的数据，此方法会针对它推送一次 {@Observer.onChanged} 事件
      * 如果这时 dispatchingValue 正在运行的话，这将触发 for 循环来重新遍历观测者们以保证他们收到的数据都是最新的
+     *
      * @param initiator 生命周期发生变化的观测者
      */
     private void dispatchingValue(@Nullable ObserverWrapper initiator) {
@@ -200,6 +228,7 @@ public class CLiveData<T> {
     /**
      * 推送消息给观测者
      * 保证每个观测者都是处于可接受正常数据的情况
+     *
      * @param observer
      */
     private void considerNotify(ObserverWrapper observer) {
@@ -218,12 +247,16 @@ public class CLiveData<T> {
             return;
         }
         observer.mLastVersion = mVersion;
-        // 这里最好检测一下是否能转换为 T
-        try {
-            //noinspection unchecked
-            observer.mObserver.onChanged((T) mData, mType);
-        } catch (Exception e) {
-            observer.mObserver.onError(WilleErrorConverter.exceptionConverter(e));
+        // 判断本次是异常事件还是正常事件
+        if (mErrorConverter != null){
+            observer.mObserver.onError(mErrorConverter);
+        }else{
+            try {
+                //noinspection unchecked
+                observer.mObserver.onChanged((T) mData, mType);
+            } catch (Exception e) {
+                observer.mObserver.onError(WilleErrorConverter.exceptionConverter(e));
+            }
         }
     }
 
@@ -336,6 +369,7 @@ public class CLiveData<T> {
                 dispatchingValue(this);
             }
         }
+
     }
 
     @MainThread
