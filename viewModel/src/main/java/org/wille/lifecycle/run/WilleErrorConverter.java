@@ -29,12 +29,10 @@ public class WilleErrorConverter<T extends BasisError> {
         mErrorObj = (T) errorObj;
     }
 
-
     /**
      * 主线程异常转换器
      *
      * @param exception
-     * @param <T>
      * @return
      */
     @MainThread
@@ -47,11 +45,10 @@ public class WilleErrorConverter<T extends BasisError> {
      * 主线程异常转换器
      *
      * @param exception
-     * @param <T>
      * @return
      */
     @MainThread
-    public static  WilleErrorConverter exceptionConverter(BasisError exception) {
+    public static WilleErrorConverter exceptionConverter(BasisError exception) {
         InstanceErrorConverter.sWilleErrorConverter.setErrorObj(exception);
         return InstanceErrorConverter.sWilleErrorConverter;
     }
@@ -60,10 +57,9 @@ public class WilleErrorConverter<T extends BasisError> {
      * 子线程异常转换器
      *
      * @param exception
-     * @param <T>
      * @return
      */
-    public static  WilleErrorConverter postExceptionConverter(BasisError exception) {
+    public static WilleErrorConverter postExceptionConverter(BasisError exception) {
         synchronized (mConverterLock) {
             InstanceErrorConverter.sWilleErrorConverter.setErrorObj(exception);
         }
@@ -74,7 +70,6 @@ public class WilleErrorConverter<T extends BasisError> {
      * 子线程异常转换器
      *
      * @param exception
-     * @param <T>
      * @return
      */
     public static <T extends Exception> WilleErrorConverter postExceptionConverter(T exception) {

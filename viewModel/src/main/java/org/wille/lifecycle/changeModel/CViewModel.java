@@ -1,6 +1,7 @@
 package org.wille.lifecycle.changeModel;
 
 import android.arch.lifecycle.LifecycleOwner;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -80,6 +81,7 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
      *
      * @param modelEvent
      */
+    @MainThread
     public void removeObserver(Observer<T> modelEvent) {
         // 如果生命周期未结束才需要解绑定
         if (canDoNext()) {

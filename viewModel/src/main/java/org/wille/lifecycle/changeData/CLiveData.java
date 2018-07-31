@@ -285,7 +285,7 @@ public class CLiveData<T> {
         }
 
         /**
-         * removeObserver 处理完成，接触生命周期的绑定
+         * removeObserver 处理完成，解除生命周期的绑定
          */
         @Override
         void detachObserver() {
@@ -372,14 +372,12 @@ public class CLiveData<T> {
 
     @MainThread
     public void removeObserver(@NonNull final Observer<T> observer) {
-        if (ThreadProvider.isMainThread()) {
-            ObserverWrapper removed = mObservers.get(observer);
-            if (removed == null) {
-                return;
-            }
-            removed.detachObserver();
-            removed.activeStateChanged(false);
+        ObserverWrapper removed = mObservers.remove(observer);
+        if (removed == null) {
+            return;
         }
+        removed.detachObserver();
+        removed.activeStateChanged(false);
     }
 
     @MainThread
@@ -408,18 +406,19 @@ public class CLiveData<T> {
     }
 
     @Nullable
-    public T getValue(){
+    public T getValue() {
         return (T) mData;
     }
 
     @NonNull
-    public @LoadDataType int getType(){
+    public @LoadDataType
+    int getType() {
         return mType;
     }
 
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public void postValue(){
+    public void postValue() {
         dispatchingValue(null);
     }
 
