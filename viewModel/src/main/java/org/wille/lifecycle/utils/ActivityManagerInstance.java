@@ -23,12 +23,8 @@ import static android.arch.lifecycle.Lifecycle.State.DESTROYED;
  */
 public class ActivityManagerInstance implements Application.ActivityLifecycleCallbacks {
 
-
     // activity 堆栈提高多线程效率
     private static final Map<Class<?>, AppCompatActivity> mStack = new ConcurrentHashMap<>();
-
-    // 刷新回调
-//    private Handler mHandler = null;
     // 是否处于激活状态
     private boolean mIsAllResume = false;
     // 是否已经绑定过
@@ -40,6 +36,11 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
         }
         mIsBind = true;
         application.registerActivityLifecycleCallbacks(this);
+    }
+
+    @Nullable
+    public static Context getApplication() {
+        return getInstance().getContext();
     }
 
     @Nullable
@@ -212,10 +213,6 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
 
     public static ActivityManagerInstance getInstance() {
         return Install.install;
-    }
-
-    public static Context getApplication() {
-        return getInstance().getContext();
     }
 
     private static class Install {
