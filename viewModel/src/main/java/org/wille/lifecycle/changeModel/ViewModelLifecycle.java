@@ -14,15 +14,19 @@ import android.support.v7.app.AppCompatActivity;
  */
 public abstract class ViewModelLifecycle extends ViewModel implements LifecycleObserver {
 
+    final static boolean DEF_BOOLEAN = false;
+    final static boolean TRUE_BOOLEAN = true;
+
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     public abstract void onDestroy();
 
 
     /**
      * 绑定生命周期
+     *
      * @param lifecycle
      */
-    public ViewModelLifecycle bindLifecycle(AppCompatActivity lifecycle){
+    public ViewModelLifecycle bindLifecycle(AppCompatActivity lifecycle) {
         lifecycle.getLifecycle().addObserver(this);
         return this;
     }

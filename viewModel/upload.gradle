@@ -6,9 +6,6 @@ apply plugin: 'com.github.dcendents.android-maven'
 def siteUrl = 'https://github.com/wille-89/wille-viewModel' // 项目主页。
 def gitUrl = 'https://github.com/wille-89/wille-viewModel.git' // Git仓库的url。
 
-group = "org.wille.lifecycle"// 唯一包名,比如compile 'com.ansen.http:okhttpencapsulation:1.0.1'中的com.ansen.http就是这里配置的。
-version = "0.1.0"//项目引用的版本号，比如compile 'com.ansen.http:okhttpencapsulation:1.0.1'中的1.0.1就是这里配置的。
-
 //发布到JCenter上的项目名字
 def libName = "viewModel"
 
@@ -18,7 +15,7 @@ def libName = "viewModel"
 //compile 'com.ssy.fireworkstextview:fireworkstextview:1.0.0'
 group = "org.wille.lifecycle"
 // 版本号，下次更新是只需要更改版本号即可
-version = "0.1.0"
+version = "0.1.1"
 //上面配置后上传至JCenter后的编译路径是这样的： compile 'me.songning.CircleView:library:1.0.0'
 
 //生成源文件

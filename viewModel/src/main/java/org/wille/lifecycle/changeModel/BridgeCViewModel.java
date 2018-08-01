@@ -1,5 +1,6 @@
 package org.wille.lifecycle.changeModel;
 
+
 import android.arch.lifecycle.LifecycleOwner;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
@@ -9,47 +10,38 @@ import android.support.v7.app.AppCompatActivity;
 
 import org.wille.lifecycle.changeData.CLiveData;
 import org.wille.lifecycle.changeData.Observer;
-import org.wille.lifecycle.run.AppLifeCycleAble;
 import org.wille.lifecycle.run.BasisError;
 import org.wille.lifecycle.run.ViewModelConstant;
 import org.wille.lifecycle.run.WilleErrorConverter;
 
 import static org.wille.lifecycle.run.ViewModelConstant.LOAD_DATA_DEF;
 
+
 /**
  * 创建人员：杨浩
- * 创建日期：2018/7/27
- * 功能简介：
+ * 创建日期：2018/8/1
+ * 功能简介：可以观察俩个 LiveData 的 ViewModel
+ * 设计之处就是考虑观测的对象数量是确定的
+ * 比如一个界面 A 它有网络请求的数据 Q 需要观测，并且它有一份数据 W 需要分享给界面 B 这是我碰到最常用的情况
+ * 所以封装了 BridgeCViewModel
+ * 如果有一对多的情况请使用 MediatorCViewModel ，但是由于一对多会关系会导致潜在的管理困难与使用困难，所以不推荐使用
  */
-public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLifeCycleAble {
+public abstract class BridgeCViewModel<T, X> extends CViewModel<T> {
 
+    private final CLiveData<X> mBridgeData;
 
-    // 是否已经结束了生命周期
-    private boolean isOnDestroy = DEF_BOOLEAN;
-    // 是否已经绑定了生命周期
-    protected boolean isBindActivity = DEF_BOOLEAN;
-    private final CLiveData<T> mData;
-
-    public CViewModel() {
-        mData = new CLiveData<>();
-        onCreate(mData);
+    public BridgeCViewModel() {
+        super();
+        mBridgeData = new CLiveData<>();
+        onCreate(getLiveData(), mBridgeData);
     }
-
-    /**
-     * 加载数据源入口
-     */
-    public void loadData() {
-        loadData(LOAD_DATA_DEF);
-    }
-
-    public abstract void loadData(@ViewModelConstant.LoadDataType int type);
 
     /**
      * 可以在这里做一些初始化操作
      *
      * @param cLiveData
      */
-    public void onCreate(CLiveData<T> cLiveData) {
+    public void onCreate(CLiveData<T> cLiveData, CLiveData<X> bridgeData) {
 
     }
 
@@ -59,18 +51,20 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
      * @param owner
      * @param observer
      */
-    public void observe(@NonNull LifecycleOwner owner, @NonNull Observer<T> observer) {
-        mData.observe(owner, observer);
+    public void bridgeObserve(@NonNull LifecycleOwner owner, @NonNull Observer<X> observer) {
+        mBridgeData.observe(owner, observer);
     }
 
-    /**
-     * 解除所有绑定
-     */
-    public void removeObservers() {
+    public void removeBridgeObservers() {
         // 如果生命周期未结束才需要解绑定
         if (canDoNext()) {
-            mData.onDestroy();
+            mBridgeData.onDestroy();
         }
+    }
+
+    public void removeAllObservers() {
+        removeBridgeObservers();
+        removeObservers();
     }
 
     /**
@@ -79,11 +73,26 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
      * @param modelEvent
      */
     @MainThread
-    public void removeObserver(Observer<T> modelEvent) {
+    public void removeBridgeObserver(Observer<X> modelEvent) {
         // 如果生命周期未结束才需要解绑定
         if (canDoNext()) {
-            mData.removeObserver(modelEvent);
+            mBridgeData.removeObserver(modelEvent);
         }
+    }
+
+    public void removeAllObserver(Observer modelEvent) {
+        removeObserver(modelEvent);
+        removeBridgeObserver(modelEvent);
+    }
+
+    public void postAllError(BasisError e, @ViewModelConstant.LoadDataType int type) {
+        postBridgeError(e, type);
+        postError(e, type);
+    }
+
+    public void postAllError(String msg, @ViewModelConstant.LoadDataType int type) {
+        postBridgeError(msg, type);
+        postError(msg, type);
     }
 
     /**
@@ -92,10 +101,10 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
      * @param e    异常源
      * @param type 刷新数据类型，是 init or result or addMore or def
      */
-    public void postError(BasisError e, @ViewModelConstant.LoadDataType int type) {
+    public void postBridgeError(BasisError e, @ViewModelConstant.LoadDataType int type) {
         // 如果生命周期未结束才可以推送异常
         if (canDoNext()) {
-            mData.postValue(WilleErrorConverter.postExceptionConverter(e), type);
+            mBridgeData.postValue(WilleErrorConverter.postExceptionConverter(e), type);
         }
     }
 
@@ -105,8 +114,8 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
      * @param msg  异常信息
      * @param type 刷新数据类型，是 init or result or addMore or def
      */
-    public void postError(String msg, @ViewModelConstant.LoadDataType int type) {
-        postError(new Exception(msg), type);
+    public void postBridgeError(String msg, @ViewModelConstant.LoadDataType int type) {
+        postBridgeError(new Exception(msg), type);
     }
 
     /**
@@ -115,21 +124,26 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
      * @param e    异常源
      * @param type 刷新数据类型，是 init or result or addMore or def
      */
-    public void postError(Exception e, @ViewModelConstant.LoadDataType int type) {
+    public void postBridgeError(Exception e, @ViewModelConstant.LoadDataType int type) {
         // 如果生命周期未结束才可以推送异常
         if (canDoNext()) {
-            mData.postValue(WilleErrorConverter.postExceptionConverter(e), type);
+            mBridgeData.postValue(WilleErrorConverter.postExceptionConverter(e), type);
         }
     }
 
     /**
      * 使用上一次的数据去触发刷新
      */
-    public void postValue() {
+    public void postBridgeValue() {
         // 如果生命周期未结束才可以刷新
         if (canDoNext()) {
-            mData.postValue();
+            mBridgeData.postValue();
         }
+    }
+
+    public void postAllValue() {
+        postBridgeValue();
+        postValue();
     }
 
     /**
@@ -137,10 +151,10 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
      *
      * @param t 数据源
      */
-    public void postValue(T t) {
+    public void postBridgeValue(X t) {
         // 如果生命周期未结束才可以刷新
         if (canDoNext()) {
-            mData.postValue(t, LOAD_DATA_DEF);
+            mBridgeData.postValue(t, LOAD_DATA_DEF);
         }
     }
 
@@ -150,10 +164,10 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
      * @param t    数据源
      * @param type 刷新数据类型，是 init or result or addMore or def
      */
-    public void postValue(T t, @ViewModelConstant.LoadDataType int type) {
+    public void postBridgeValue(X t, @ViewModelConstant.LoadDataType int type) {
         // 如果生命周期未结束才可以刷新
         if (canDoNext()) {
-            mData.postValue(t, type);
+            mBridgeData.postValue(t, type);
         }
     }
 
@@ -163,74 +177,38 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
      * @return
      */
     @Nullable
-    public T getValue() {
+    public X getBridgeValue() {
         // 如果生命周期未结束才可以获取
         if (canDoNext()) {
-            return mData.getValue();
+            return mBridgeData.getValue();
         }
         return null;
     }
 
-    /**
-     * 与 Activity 绑定生命周期
-     * 多次重复绑定可能出现意想不到的情况
-     *
-     * @param lifecycle
-     * @return
-     */
     @NonNull
-    public CViewModel<T> bindLifecycle(AppCompatActivity lifecycle) {
-        // 如果生命周期未结束才可以获取
-        if (canDoNext()) {
-            isBindActivity = TRUE_BOOLEAN;
-            lifecycle.getLifecycle().addObserver(this);
-        }
-        return this;
-    }
-
-    /**
-     * 与 Fragment 绑定生命周期
-     * 多次重复绑定可能出现意想不到的情况
-     *
-     * @param lifecycle
-     * @return
-     */
-    @NonNull
-    public CViewModel<T> bindLifecycle(Fragment lifecycle) {
-        // 如果生命周期未结束才可以获取
-        if (canDoNext()) {
-            isBindActivity = TRUE_BOOLEAN;
-            lifecycle.getLifecycle().addObserver(this);
-        }
-        return this;
-    }
-
-    /**
-     * 用于判断是否绑定了 Activity
-     *
-     * @return
-     */
-    public boolean isBindActivity() {
-        return isBindActivity;
-    }
-
-    @Nullable
-    CLiveData<T> getLiveData() {
-        return mData;
-    }
-
     @Override
-    public boolean canDoNext() {
-        return !isOnDestroy;
+    public BridgeCViewModel<T,X> bindLifecycle(Fragment lifecycle) {
+        // 如果生命周期未结束才可以获取
+        if (canDoNext()) {
+            isBindActivity = TRUE_BOOLEAN;
+            lifecycle.getLifecycle().addObserver(this);
+        }
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public BridgeCViewModel<T,X> bindLifecycle(AppCompatActivity lifecycle) {
+        // 如果生命周期未结束才可以获取
+        if (canDoNext()) {
+            isBindActivity = TRUE_BOOLEAN;
+            lifecycle.getLifecycle().addObserver(this);
+        }
+        return this;
     }
 
     @Override
     public void onDestroy() {
-        isOnDestroy = TRUE_BOOLEAN;
-        if (mData != null) {
-            mData.onDestroy();
-        }
+        super.onDestroy();
     }
-
-
 }

@@ -11,10 +11,10 @@ import static org.wille.lifecycle.run.ViewModelConstant.LOAD_DATA_REFRESH;
  * 创建日期：2018/7/27
  * 功能简介：
  */
-public abstract class CListViewModel<T> extends CViewModel<T> {
+public abstract class ListCViewModel<T> extends CViewModel<T> {
 
     // 分页加载下标
-    private int mPageLocation = 0;
+    private int mPageLocation = DEF_PAGE;
     // 默认页码
     protected static final int DEF_PAGE = 1;
 
@@ -52,6 +52,15 @@ public abstract class CListViewModel<T> extends CViewModel<T> {
                 break;
             }
         }
+    }
+
+    /**
+     * 获取当前页码
+     *
+     * @return
+     */
+    protected int getPageLocation() {
+        return mPageLocation;
     }
 
     /**
