@@ -6,12 +6,15 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
 
 import org.wille.lifecycle.base.ViewModelActivity;
 import org.wille.lifecycle.changeModel.CViewModel;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static android.arch.lifecycle.Lifecycle.State.DESTROYED;
 
 /**
  * 创建人员：杨浩
@@ -22,7 +25,7 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
 
 
     // activity 堆栈提高多线程效率
-    private static final Map<Class<?>, ViewModelActivity> mStack = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, AppCompatActivity> mStack = new ConcurrentHashMap<>();
 
     // 刷新回调
 //    private Handler mHandler = null;
@@ -41,7 +44,7 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
 
     @Nullable
     private Context getContext() {
-        for (ViewModelActivity baseActivity : mStack.values()) {
+        for (AppCompatActivity baseActivity : mStack.values()) {
             Context context = baseActivity.getApplication().getApplicationContext();
             if (context != null) {
                 return context;
@@ -58,9 +61,9 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
      * @return
      */
     @Nullable
-    public <T extends ViewModelActivity> T of(@NonNull Class<T> modelClass) {
-        ViewModelActivity baseActivity = mStack.get(modelClass);
-        if (baseActivity == null) {
+    public <T extends AppCompatActivity> T of(@NonNull Class<T> modelClass) {
+        AppCompatActivity baseActivity = mStack.get(modelClass);
+        if (baseActivity == null || baseActivity.getLifecycle().getCurrentState() == DESTROYED) {
             return null;
         }
         return (T) baseActivity;
@@ -73,7 +76,7 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
      * @return
      */
     @Nullable
-    public <T extends ViewModelActivity> CViewModel getViewModel(@NonNull Class<T> modelClass) {
+    private  <T extends ViewModelActivity> CViewModel getViewModel(@NonNull Class<T> modelClass) {
         ViewModelActivity activity = of(modelClass);
         if(activity != null){
            return activity.getViewModel();
@@ -86,7 +89,7 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
      */
     public void finishAll() {
         // 循环取出栈堆的方法
-        for (ViewModelActivity baseActivity : mStack.values()) {
+        for (AppCompatActivity baseActivity : mStack.values()) {
             baseActivity.finish();
         }
     }
@@ -97,9 +100,9 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
      * @param className
      */
     @SafeVarargs
-    public final void finish(Class<? extends ViewModelActivity>... className) {
-        for (Class<? extends ViewModelActivity> baseActivityClass : className) {
-            ViewModelActivity baseActivity = mStack.get(baseActivityClass);
+    public final void finish(Class<? extends AppCompatActivity>... className) {
+        for (Class<? extends AppCompatActivity> baseActivityClass : className) {
+            AppCompatActivity baseActivity = mStack.get(baseActivityClass);
             if (baseActivity != null) {
                 baseActivity.finish();
             }
@@ -112,9 +115,9 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
      * @param className
      */
     @SafeVarargs
-    public final void finishAll(Class<? extends ViewModelActivity>... className) {
-        for (ViewModelActivity baseActivity : mStack.values()) {
-            for (Class<? extends ViewModelActivity> classOne : className) {
+    public final void finishAll(Class<? extends AppCompatActivity>... className) {
+        for (AppCompatActivity baseActivity : mStack.values()) {
+            for (Class<? extends AppCompatActivity> classOne : className) {
                 if (classOne != baseActivity.getClass()) {
                     baseActivity.finish();
                 }
@@ -148,7 +151,7 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
      *
      * @param activity
      */
-    private void addActivity(ViewModelActivity activity) {
+    private void addActivity(AppCompatActivity activity) {
         mStack.put(activity.getClass(), activity);
     }
 
@@ -157,15 +160,15 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
      *
      * @param activity
      */
-    private void removeActivity(ViewModelActivity activity) {
+    private void removeActivity(AppCompatActivity activity) {
         mStack.remove(activity.getClass());
     }
 
 
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-        if (activity instanceof ViewModelActivity) {
-            addActivity((ViewModelActivity) activity);
+        if (activity instanceof AppCompatActivity) {
+            addActivity((AppCompatActivity) activity);
         }
     }
 
@@ -198,14 +201,13 @@ public class ActivityManagerInstance implements Application.ActivityLifecycleCal
 
     @Override
     public void onActivityDestroyed(Activity activity) {
-        if (activity instanceof ViewModelActivity) {
-            removeActivity((ViewModelActivity) activity);
+        if (activity instanceof AppCompatActivity) {
+            removeActivity((AppCompatActivity) activity);
         }
     }
 
     private ActivityManagerInstance() {
-        // TODO: 2018/5/14 暂时没有跨线程的需求，不开启
-//        mHandler = new Handler(Looper.getMainLooper());
+
     }
 
     public static ActivityManagerInstance getInstance() {

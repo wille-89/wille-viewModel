@@ -398,7 +398,6 @@ public class CLiveData<T> {
         if (mObservers != null) {
             mObservers.clear();
         }
-        mObservers = null;
     }
 
     public void onDestroy() {

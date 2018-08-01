@@ -12,5 +12,7 @@ import org.wille.lifecycle.changeModel.CViewModel;
  */
 public abstract class ViewModelActivity<T extends CViewModel> extends AppCompatActivity {
 
-    public abstract T getViewModel();
+    public  T getViewModel(){
+        return null;
+    }
 }

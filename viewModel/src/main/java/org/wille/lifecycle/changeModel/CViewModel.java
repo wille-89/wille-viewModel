@@ -182,7 +182,7 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
      * @return
      */
     @NonNull
-    public CViewModel bindLifecycle(AppCompatActivity lifecycle) {
+    public CViewModel<T> bindLifecycle(AppCompatActivity lifecycle) {
         // 如果生命周期未结束才可以获取
         if (canDoNext()) {
             isBindActivity = TRUE_BOOLEAN;
@@ -199,7 +199,7 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
      * @return
      */
     @NonNull
-    public CViewModel bindLifecycle(Fragment lifecycle) {
+    public CViewModel<T> bindLifecycle(Fragment lifecycle) {
         // 如果生命周期未结束才可以获取
         if (canDoNext()) {
             isBindActivity = TRUE_BOOLEAN;

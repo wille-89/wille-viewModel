@@ -14,7 +14,6 @@ import org.wille.lifecycle.run.WilleErrorConverter;
 public interface Observer<T> {
 
 
-
     /**
      * 当调用 {@link CLiveData#postValue} 时触发
      * 在多个线程同时触发新的 onChanged 事件在主线程未通知出去时会覆盖旧的事件
@@ -24,7 +23,7 @@ public interface Observer<T> {
      * @param t    一个新的数据变化
      * @param type 触发这个数据变化的原因
      */
-    void onChanged(@Nullable T t, @NonNull @ViewModelConstant.LoadDataType int type);
+    void onChanged(@NonNull T t, @ViewModelConstant.LoadDataType int type);
 
 
     /**
