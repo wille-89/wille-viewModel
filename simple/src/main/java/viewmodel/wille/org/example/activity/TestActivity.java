@@ -34,11 +34,12 @@ public class TestActivity extends AppCompatActivity {
 
         // 监听第一个 Activity 的 ViewModel
         // TODO: 2018/7/31 可以尝试根据ViewModel 的class 来查询
-        final SimpleViewModel simpleViewModel = (SimpleViewModel) ActivityManagerInstance
+        final MainActivity activity = ActivityManagerInstance
                 .getInstance()
-                .getViewModel(MainActivity.class);
-        if (simpleViewModel != null) {
-            simpleViewModel.observe(this, new Observer<SimpleBean>() {
+                .of(MainActivity.class);
+
+        if (activity != null) {
+            activity.getViewModel().observe(this, new Observer<SimpleBean>() {
                 @Override
                 public void onChanged(@NonNull SimpleBean simpleBean, int type) {
                     mTvObserve.setText(simpleBean.getSimple());
@@ -55,8 +56,8 @@ public class TestActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (simpleViewModel != null) {
-                    simpleViewModel.loadData("当然是测试：" + new Random().nextInt(100));
+                if (activity != null) {
+                    activity.getViewModel().loadData("当然是测试：" + new Random().nextInt(100));
                 }
             }
         });
