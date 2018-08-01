@@ -20,3 +20,6 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:' + gradle.supportLibraryVersion
     api 'android.arch.lifecycle:extensions:'+ gradle.lifecycle_version
 }
+
+
+apply from: 'upload.gradle'
