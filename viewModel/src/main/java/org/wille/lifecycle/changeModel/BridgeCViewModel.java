@@ -26,7 +26,7 @@ import static org.wille.lifecycle.run.ViewModelConstant.LOAD_DATA_DEF;
  * 所以封装了 BridgeCViewModel
  * 如果有一对多的情况请使用 MediatorCViewModel ，但是由于一对多会关系会导致潜在的管理困难与使用困难，所以不推荐使用
  */
-public abstract class BridgeCViewModel<T, X> extends CViewModel<T> {
+public abstract class BridgeCViewModel<T, X> extends ListCViewModel<T> {
 
     private final CLiveData<X> mBridgeData;
 
@@ -209,6 +209,7 @@ public abstract class BridgeCViewModel<T, X> extends CViewModel<T> {
 
     @Override
     public void onDestroy() {
+        mBridgeData.onDestroy();
         super.onDestroy();
     }
 }

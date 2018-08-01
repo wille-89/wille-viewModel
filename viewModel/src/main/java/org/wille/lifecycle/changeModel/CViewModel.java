@@ -226,10 +226,8 @@ public abstract class CViewModel<T> extends ViewModelLifecycle implements AppLif
 
     @Override
     public void onDestroy() {
+        mData.onDestroy();
         isOnDestroy = TRUE_BOOLEAN;
-        if (mData != null) {
-            mData.onDestroy();
-        }
     }
 
 
