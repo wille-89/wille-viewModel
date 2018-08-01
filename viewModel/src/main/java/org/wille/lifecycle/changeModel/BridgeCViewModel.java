@@ -187,7 +187,7 @@ public abstract class BridgeCViewModel<T, X> extends CViewModel<T> {
 
     @NonNull
     @Override
-    public BridgeCViewModel<T,X> bindLifecycle(Fragment lifecycle) {
+    public BridgeCViewModel<T, X> bindLifecycle(Fragment lifecycle) {
         // 如果生命周期未结束才可以获取
         if (canDoNext()) {
             isBindActivity = TRUE_BOOLEAN;
@@ -198,7 +198,7 @@ public abstract class BridgeCViewModel<T, X> extends CViewModel<T> {
 
     @NonNull
     @Override
-    public BridgeCViewModel<T,X> bindLifecycle(AppCompatActivity lifecycle) {
+    public BridgeCViewModel<T, X> bindLifecycle(AppCompatActivity lifecycle) {
         // 如果生命周期未结束才可以获取
         if (canDoNext()) {
             isBindActivity = TRUE_BOOLEAN;
